@@ -20,6 +20,11 @@ def get_start():
     return Response(json.dumps(data), mimetype="application/json")
 
 
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
+
+
 @app.route('/<name_profile>', methods=['GET'])
 def get_posts(name_profile):
     start_post = request.args.get('start', default=0, type=int)
@@ -38,8 +43,14 @@ def get_posts(name_profile):
             'message': 'Not Found when accessing profile'
         }
         return Response(json.dumps(error_post), mimetype='application/json')
+    except Exception as e:
+        error_post = {
+            'status': 500,
+            'message': str(e)
+        }
+        return Response(json.dumps(error_post), mimetype='application/json')
 
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT',5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=False, host='0.0.0.0', port=port)
