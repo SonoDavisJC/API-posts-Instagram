@@ -3,13 +3,17 @@ import os
 from flask import Flask, Response, request
 import instaloader
 import itertools
-
+from dotenv import load_dotenv
 from instaloader import ConnectionException
 
+load_dotenv()
+
 app = Flask(__name__)
-
-
 context_loader = instaloader.Instaloader()
+
+username = os.getenv('INSTA_USERNAME')
+password = os.getenv('INSTA_PASSWORD')
+context_loader.login(username, password)
 
 
 @app.route('/')
@@ -37,10 +41,16 @@ def get_posts(name_profile):
         for post in itertools.islice(profile.get_posts(), start_post, close_post):
             posts.append({'caption': f'{post.caption}', 'url': f'{post.url}', 'title': f'{post.title}'})
         return Response(json.dumps(posts), mimetype='application/json')
-    except ConnectionException:
+    except instaloader.exceptions.ProfileNotExistsException:
         error_post = {
             'status': 404,
-            'message': 'Not Found when accessing profile'
+            'message': 'Perfil no encontrado.'
+        }
+        return Response(json.dumps(error_post), mimetype='application/json')
+    except instaloader.exceptions.LoginRequiredException:
+        error_post = {
+            'status': 403,
+            'message': 'Se requiere autenticación para acceder a este perfil.'
         }
         return Response(json.dumps(error_post), mimetype='application/json')
     except Exception as e:
