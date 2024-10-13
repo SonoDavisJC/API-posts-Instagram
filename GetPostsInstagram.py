@@ -4,6 +4,8 @@ from flask import Flask, Response, request
 import instaloader
 import itertools
 
+from instaloader import ConnectionException
+
 app = Flask(__name__)
 
 
@@ -23,11 +25,19 @@ def get_posts(name_profile):
     start_post = request.args.get('start', default=0, type=int)
     close_post = request.args.get('close', default=4, type=int)
 
-    profile = instaloader.Profile.from_username(context_loader.context, name_profile)
-    posts = []
-    for post in itertools.islice(profile.get_posts(), start_post, close_post):
-        posts.append({'caption': f'{post.caption}', 'url': f'{post.url}', 'title': f'{post.title}'})
-    return Response(json.dumps(posts), mimetype='application/json')
+    try:
+        profile = instaloader.Profile.from_username(context_loader.context, name_profile)
+        posts = []
+
+        for post in itertools.islice(profile.get_posts(), start_post, close_post):
+            posts.append({'caption': f'{post.caption}', 'url': f'{post.url}', 'title': f'{post.title}'})
+        return Response(json.dumps(posts), mimetype='application/json')
+    except ConnectionException:
+        error_post = {
+            'status': 404,
+            'message': 'Not Found when accessing profile'
+        }
+        return Response(json.dumps(error_post), mimetype='application/json')
 
 
 if __name__ == '__main__':
